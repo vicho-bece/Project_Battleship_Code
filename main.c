@@ -153,7 +153,7 @@ void jugarPARTIDA(Map* tableros, Map* grafo, List* ataques)
 void mostrarPUNTAJES(Map* score)
 {
   puntajes* datos = firstMap(score);
-
+  system("clear");
   if(datos != NULL)
   {
     printf("Estos son los puntajes que sean obtenido despues de ganar una partida...\n");
@@ -179,11 +179,11 @@ void mostrarPUNTAJES(Map* score)
     switch(num)
     {
       case 1: cargarPUNTAJES(score); break;
-      //case 2: guardarPUNTAJES(score); break;
-      //case 3: borrarPuntajes(); break;
+      case 2: guardarPUNTAJES(score); break;
+      case 3: borrarPuntajes(); break;
       default: printf("Ingreso una opcion no valida.\n\n"); break;
     }
-    system("clear");
+    
     show(score);
     printf("\n ______________________________________\n");
     printf("| 1) Cargar Puntajes Guardados         |\n");   
@@ -214,12 +214,14 @@ void cargarPUNTAJES(Map* score)
 
   if(points == NULL)
   {
-    printf("Error al abrir el archivo, se forzara el cierre del programa...");
+    printf("Error al abrir el archivo, se forzara el cierre del juego...");
     exit(EXIT_FAILURE);
   }
-
-  if(ftell(points) != -1)
+  system("clear");
+  fseek(points, 0, SEEK_END);
+  if(ftell(points) != 0)
   {
+    fseek(points, 0, SEEK_SET);
     char linea[30];
     int i, k, tipoINT;
     puntajes* loading;
@@ -293,7 +295,59 @@ int conversion(char *numero)
 
     return suma;
   }
+}
+
+void guardarPUNTAJES(Map* score)
+{
+  FILE* points = fopen("score.txt", "a");
+  if(points == NULL)
+  {
+    printf("Error al abrir el archivo. Se forzara el cierre del juego...");
+    exit(EXIT_FAILURE);
+  }
+  system("clear");
+  puntajes* datos = firstMap(score);
+  if(datos != NULL)
+  {
+    while(datos != NULL)
+    {
+      fputs(datos->comandante, points);
+      fputc(' ', points);
+      fprintf(points, "%i", datos->puntuacion);
+      fputc('\n', points);
+      datos = nextMap(score);
+    }
+    fputc('\0', points);
+  }
+  else
+    printf("\nNo hay puntajes guardados, debido a que no has ganado una partida todavia...\n\n");
+
+  fclose(points);
+}
+
+void borrarPuntajes()
+{
+  FILE* points = fopen("score.txt", "w");
+  if(points == NULL)
+  {
+    printf("Error al abrir el archivo, se forzara el cierre del juego...");
+    exit(EXIT_FAILURE);
+  }
+  system("clear");
+  fseek(points, 0, SEEK_END);
   
+  if(ftell(points) != 0)
+  {
+    fseek(points, 0, SEEK_SET);
+    fputc('\0', points);
+    printf("\nSe borro el contenido de los puntajes en el archivo de forma exitosa...\n\n");
+  }
+  else
+  {
+    printf("\nEl archivo donde se guardan puntajes se encuentra vacio...\n\n");
+  }
+
+  fclose(points);
 }
 
 void nuevaPARTIDA(Map* tableros, Map* grafo, List* ataques)

@@ -1,4 +1,0 @@
-vichin 1000
-nico 2000
-jorge 3000
-pichulotote 10000
