@@ -15,7 +15,7 @@ typedef struct{
 
 typedef struct{
   int puntuacion;
-  char comandante;
+  char* comandante;
 }puntajes;
 
 //Estructura para el mapa del grafo
@@ -52,24 +52,253 @@ int lower_than_int(void * key1, void * key2) {
     return 0;
 }
 
+void menu();
+
+//OPCIONES DEL MENU
+void jugarPARTIDA(Map*, Map*, List*);
+void mostrarPUNTAJES(Map*);
+
+//OPCIONES DE JUGAR PARTIDA
+void nuevaPARTIDA(Map*, Map*, List*);
+void cargarPARTIDA(Map*, Map*, List*, FILE);
+
+//OPCIONES DE MOSTRAR PUNTAJES
+void cargarPUNTAJES(Map*);
+void guardarPUNTAJES(Map*);
+void borrarPuntajes();
+
+//FUNCIONES APARTES DE NUEVA PARTIDA
 void agregarBARCOS(int, int, terreno*, int, int, int);
 void crearMATRIZ(terreno*);
 void barcos(Map*);
 void barcosMAQUINA(Map*);
 bool vertical(int, int, terreno*);
+bool barcosLibres(int, int, terreno*, int, int, int);
+bool medida(int, int, int, int, int);
+
+//FUNCIONES APARTES DURANTE LA PARTIDA
 void partida(Map*, Map*, List*);
 bool finish(terreno*);
 void attack(terreno*, terreno*, turnos*, coordenadas*, int, int);
-void attack_tablero(terreno* );
+void attack_tablero(terreno*);
 
+//FUNCIONES APARTES DE CARGAR, GUARDAR Y BORRAR PUNTAJE
+void show(Map*);
+int conversion(char *);
+
+//MENU DE OPCIONES...
 int main()
 {
   
   Map* tableros = createMap(is_equal_string);
   Map* scores = createMap(is_equal_int);
-  Map* grafo = createMap(is_equal_string);//GRAFO IMPLICITO
-  List* ataques = create_list();//LISTA GRAFO
+  Map* grafo = createMap(is_equal_string);
+  List* ataques = create_list();
   
+  int num;
+  menu();
+  scanf("%i", &num);
+
+  while(num != 3)
+  {
+    switch(num)
+    {
+      case 1: jugarPARTIDA(tableros, grafo, ataques); break;
+      case 2: mostrarPUNTAJES(scores); break;
+      default: printf("\nLa opcion que escogio no es valido. Favor de ingresar uno dentro del rango\n\nOPCION = "); break;
+    }
+    system("clear");
+    menu();
+    scanf("%i", &num);
+  }
+
+  printf("Usted dio finalizado la aplicacion. Muchas gracias por jugar y hasta luego...");
+  
+  return 0;
+}
+
+//OPCIONES DE JUGAR PARTIDA...
+void jugarPARTIDA(Map* tableros, Map* grafo, List* ataques)
+{
+  system("clear");
+
+  FILE* archivo;
+  int num;
+
+  printf(" ______________________________________\n");
+  printf("| 1) Nueva Partida                     |\n");   
+  printf("| 2) Cargar Partida                    |\n"); 
+  printf("| 3) Volver Al Menu Principal          |\n");
+  printf("|______________________________________|\n\n");
+  printf("¿Que deseas hacer?\n\nOPCION = ");
+  scanf("%i", &num);
+  
+  while(num != 3)
+  {
+    if(num == 1)
+    {
+      //AQUI REVISAR SI HAY PROGRESO...
+      nuevaPARTIDA(tableros, grafo, ataques); break;
+    }
+
+    /*if(num == 2)
+    {
+      //AQUI REVISAR SI HAY PROGRESO...
+      cargarPARTIDA(tableros, grafo, ataques, *archivo); break;
+    }*/
+  }
+}
+
+//OPCIONES DE MOSTRAR LOS PUNTAJES...
+void mostrarPUNTAJES(Map* score)
+{
+  puntajes* datos = firstMap(score);
+
+  if(datos != NULL)
+  {
+    printf("Estos son los puntajes que sean obtenido despues de ganar una partida...\n");
+
+    show(score);
+  }
+  else
+    printf("\nNo hay datos de los puntajes. Si has guardados los puntajes anteriormente, ingrese la opcion de cargar los puntajes guardados...\n\n");
+
+  printf("\n ______________________________________\n");
+  printf("| 1) Cargar Puntajes Guardados         |\n");   
+  printf("| 2) Guardar Puntajes Nuevos           |\n"); 
+  printf("| 3) Borrar Puntajes Guardados         |\n");
+  printf("| 4) Volver Al Menu Principal          |\n");
+  printf("|______________________________________|\n\n");
+  printf("¿Que deseas hacer?\n\nOPCION = ");
+
+  int num;
+  scanf("%i", &num);
+
+  while(num != 4)
+  {
+    switch(num)
+    {
+      case 1: cargarPUNTAJES(score); break;
+      //case 2: guardarPUNTAJES(score); break;
+      //case 3: borrarPuntajes(); break;
+      default: printf("Ingreso una opcion no valida.\n\n"); break;
+    }
+    system("clear");
+    show(score);
+    printf("\n ______________________________________\n");
+    printf("| 1) Cargar Puntajes Guardados         |\n");   
+    printf("| 2) Guardar Puntajes Nuevos           |\n"); 
+    printf("| 3) Borrar Puntajes Guardados         |\n");
+    printf("| 4) Volver Al Menu Principal          |\n");
+    printf("|______________________________________|\n\n");
+    printf("¿Que deseas hacer?\n\nOPCION = ");
+
+    scanf("%i", &num);
+  }
+  system("clear");
+}
+
+void show(Map* score)
+{
+  puntajes* datos = firstMap(score);
+  while(datos != NULL)
+  {
+    printf("%i %s\n", datos->puntuacion, datos->comandante);
+    datos = nextMap(score);
+  }
+}
+
+void cargarPUNTAJES(Map* score)
+{
+  FILE* points = fopen("score.txt", "r");
+
+  if(points == NULL)
+  {
+    printf("Error al abrir el archivo, se forzara el cierre del programa...");
+    exit(EXIT_FAILURE);
+  }
+
+  if(ftell(points) != -1)
+  {
+    char linea[30];
+    int i, k, tipoINT;
+    puntajes* loading;
+
+    while( fscanf(points, "%39[^\n]s", linea) != EOF)
+    {
+      fgetc(points);
+
+      char capitan[21];
+      char numero[10];
+      loading = malloc(sizeof(puntajes));
+      i = 0;
+
+      for(; linea[i] != ' ' && i < 19 ; i++)
+        capitan[i] = linea[i];
+      capitan[i] = '\0';
+
+      loading->comandante = strdup(capitan);
+      i++;
+
+      for(k = 0; linea[i] != EOF && k < 8; i++, k++)
+        numero[k] = linea[i];
+      numero[k] = '\0';
+
+      loading->puntuacion = conversion(numero);
+
+      insertMap(score, &loading->puntuacion, loading);
+    }
+  }
+  else
+    printf("\nNo hay puntajes guardados, el archivo se encuentra vacio :(...\n\n");
+
+  fclose(points);
+}
+
+int conversion(char *numero)
+{
+  int i;
+  int digito, decimas, aux;
+  int suma = 0, potencia = -1;
+
+  //Calculo la cantidad de digitos que ocupa el char...
+  for(i = 0; numero[i] != '\0'; i++)
+    potencia++;
+
+  aux = potencia;
+
+  if(potencia == 0)
+  {
+    //El caso de que el numero sea de un digito...
+    digito = numero[0] - 48;
+    return digito;
+  }
+  else
+  {
+    //El caso de que el numero sea mayor o igual a 2 digitos..
+    for(int k = 0; k < i; k++)
+    {
+      decimas = 1;
+      digito = numero[k] - 48;
+
+      //Ajusto las decimas dependiendo la posicion del string...
+      for(;aux > 0; aux--)
+        decimas *= 10;
+
+      digito *= decimas;
+      suma += digito;
+      potencia--;
+      aux = potencia;
+    }
+
+    return suma;
+  }
+  
+}
+
+void nuevaPARTIDA(Map* tableros, Map* grafo, List* ataques)
+{
+  system("clear");
 
   int i, j, num;
 
@@ -90,23 +319,9 @@ int main()
     insertMap(tableros, matriz->nombre, matriz); 
   }
   
-
   srand(time(NULL));
   barcos(tableros);
   barcosMAQUINA(tableros);
-
-  /*printf("   0  1  2  3  4  5  6  7  8  9\n");
-
-  terreno* m = searchMap(tableros, "enemy");
-  for( i=0 ; i<=9 ; i++)
-  {
-    printf("%d ", i);
-
-    for(j=0 ; j<=9 ; j++)
-      printf("[%c]", m->tablero[i][j]);
-      
-    printf("\n");
-  }*/
 
   for(i = 0; i < 2; i++)
   {
@@ -135,12 +350,8 @@ int main()
     push_back(ataques, xy);
   }
   
-
   partida(tableros, grafo, ataques);
-  
-  return 0;
 }
-
 
 void crearMATRIZ(terreno* matriz)
 {
@@ -156,9 +367,135 @@ void barcos(Map* tableros)
 {
 
   terreno *p = searchMap(tableros, "user");
-  int cdx, cdy, i, j, k=3,cdx2, cdy2;
+  int cdx, cdy, i, j, k = 3,cdx2, cdy2;
   
   printf("Este es tu tablero Usuario(a)...\n\n");
+  printf("   0  1  2  3  4  5  6  7  8  9\n");
+
+  for(i = 0; i < 10; i++)
+  {
+    printf("%i ", i);
+
+    for(j = 0; j < 10; j++)
+      printf("[%c]", p->tablero[i][j]);
+
+    printf("\n");
+  }
+
+  while(k <= 5)
+  {  
+      printf("\n\nAgregue coordenada de inicio para barco de %i casillas.\nX = ", k);
+      scanf("%d", &cdy);
+      printf("Y = ");
+      scanf("%d", &cdx);
+
+      printf("\n\nAgregue coordenadas finales para barco de %i casillas.\nX = ", k);
+      scanf("%d", &cdy2);
+      printf("Y = ");
+      scanf("%d", &cdx2);
+      
+      while((barcosLibres(cdx,cdy,p,k,cdx2,cdy2) == false) || medida(cdx, cdy, cdx2, cdy2, k))
+      {
+        printf("\n¡Capitán!, El barco que desea poner esta interceptando con otro barco, se encuentra fuera del rango o lo esta posicionando de manera incorrecta. Favor de ingresar otra.\n");
+
+        printf("\n\nAgregue coordenada de inicio para barco de %i casillas.\nX = ", k);
+        scanf("%d", &cdy);
+        printf("Y = ");
+        scanf("%d", &cdx);
+
+        printf("\n\nAgregue coordenadas finales para barco de %i casillas.\nX = ", k);
+        scanf("%d", &cdy2);
+        printf("Y = ");
+        scanf("%d", &cdx2);
+      
+      }
+      system("clear");
+
+      agregarBARCOS(cdx,cdy,p,k,cdx2,cdy2);
+    
+    k++;
+  }
+}
+
+bool medida(int x, int y, int x2, int y2, int k)
+{
+  int ejeX, ejeY;
+
+  ejeX = x - x2;
+  ejeY = y - y2;
+
+  if(ejeY < 0) ejeY *= -1;
+  if(ejeX < 0) ejeX *= -1;
+
+  if(ejeX == 0 && ejeY + 1 == k) return false;
+  if(ejeX + 1 == k && ejeY == 0) return false;
+
+  return true;
+}
+
+bool barcosLibres(int x, int y, terreno* p, int k, int x2, int y2)
+{
+  int i, c;
+
+  if(x > x2) for(i = 0; i < k; i++) if(p->tablero[x-i][y] != ' ') return false;
+
+  if(x < x2) for(i = 0; i < k; i++) if(p->tablero[x+i][y] != ' ') return false;
+  
+  if(y > y2) for(i = 0; i < k; i++) if(p->tablero[x][y-i] != ' ') return false;
+  
+  if(y < y2) for(i = 0; i < k; i++) if(p->tablero[x][y+i] != ' ') return false;
+  
+  return true;
+}
+
+void agregarBARCOS(int x, int y, terreno* p, int k, int x2, int y2)
+{
+  int i, j, c;
+  
+  for(i = 0 ; i <= 9 ; i++)
+  {
+    for(j = 0 ; j <= 9 ; j++)
+    {
+      if(i == x && j == y)
+      {
+        switch(k)
+        {
+          case 3:
+          
+          if(x > x2){ for(c = 0; c < 3; c++) p->tablero [i-c][j] = 'A'; break;}
+            
+          if(x < x2){ for(c = 0; c < 3; c++) p->tablero [i+c][j] = 'A'; break;}
+            
+          if(y > y2){ for(c = 0; c < 3; c++) p->tablero [i][j-c] = 'A'; break;}
+           
+          if(y < y2){ for(c = 0; c < 3; c++) p->tablero [i][j+c] = 'A'; break;}
+          
+          case 4:
+          
+          if(x > x2){ for(c = 0; c < 4; c++) p->tablero [i-c][j] = 'B'; break;}
+            
+          if(x < x2){ for(c = 0; c < 4; c++) p->tablero [i+c][j] = 'B'; break;}
+           
+          if(y > y2){ for(c = 0; c < 4; c++) p->tablero [i][j-c] = 'B'; break;}
+           
+          if(y < y2){ for(c = 0; c < 4; c++) p->tablero [i][j+c] = 'B'; break;}
+            
+          case 5:
+          
+          if(x > x2){ for(c = 0; c < 5; c++) p->tablero [i-c][j] = 'C'; break;}
+            
+          if(x < x2){ for(c = 0; c < 5; c++) p->tablero [i+c][j] = 'C'; break;}
+            
+          if(y > y2){ for(c = 0; c < 5; c++) p->tablero [i][j-c] = 'C'; break;}
+            
+          if(y < y2){ for(c = 0; c < 5; c++) p->tablero [i][j+c] = 'C'; break;}
+            
+        }
+        
+      }
+    }
+  }
+  printf("\n");
   printf("   0  1  2  3  4  5  6  7  8  9\n");
   for(i = 0; i < 10; i++)
   {
@@ -169,112 +506,9 @@ void barcos(Map* tableros)
 
     printf("\n");
   }
-  while(k<=5){
-    
-      printf("\n\nAgregue coordenada de inicio para barco de %i casillas\nX = ", k);
-      scanf("%d", &cdy);
-      printf("Y = ");
-      scanf("%d", &cdx);
-      printf("\n\nAgregue coordenadas finales para barco de %i casillas\nX = ", k);
-      scanf("%d", &cdy2);
-      printf("Y = ");
-      scanf("%d", &cdx2);
-      
-      while(p->tablero[cdx][cdy] != ' ')
-      {
-        printf("Comandante,La coordenada (%i,%i) se encuentra ocupada.Favor de ingresar otro\nX = ", cdy, cdx);
-        scanf("%d", &cdy);
-        printf("Y = ");
-        scanf("%d", &cdx);
-      
-      }
-      while(p->tablero[cdx2][cdy2] != ' ')
-      {
-        printf("Comandante,La coordenada (%i,%i) se encuentra ocupada.Favor de ingresar otro\nX = ", cdy2, cdx2);
-        scanf("%d", &cdy2);
-        printf("Y = ");
-        scanf("%d", &cdx2);
-      
-      }
-      system("clear");
-      agregarBARCOS(cdx,cdy,p,k,cdx2,cdy2);
-    
-    k++;
-  }
-}
-
-void agregarBARCOS(int x, int y, terreno* p, int k, int x2, int y2)
-{
-  int i, j, auxX, auxY;
-  auxX = x2;
-  auxY = y2;
-  for(i = 0 ; i <= 9 ; i++)
-  {
-    for(j = 0 ; j <= 9 ; j++)
-    {
-      if(i == x && j == y)
-      {
-        switch(k)
-        {
-          case 3:
-          if(x > x2){
-            for(int c = 0; c < 3; c++) p->tablero [i-c][j] = 'A'; break;
-          }
-          if(x < x2){
-            for(int c = 0; c < 3; c++) p->tablero [i+c][j] = 'A'; break;
-          }
-          if(y > y2){
-            for(int c = 0; c < 3; c++) p->tablero [i][j-c] = 'A'; break;
-          }
-          if(y <y2){
-            for(int c = 0; c < 3; c++) p->tablero [i][j+c] = 'A'; break;
-          }
-
-          case 4: 
-          if(x > x2){
-            for(int c = 0; c < 4; c++) p->tablero [i-c][j] = 'B'; break;
-          }
-          if(x < x2){
-            for(int c = 0; c < 4; c++) p->tablero [i+c][j] = 'B'; break;
-          }
-          if(y > y2){
-            for(int c = 0; c < 4; c++) p->tablero [i][j-c] = 'B'; break;
-          }
-          if(y <y2){
-            for(int c = 0; c < 4; c++) p->tablero [i][j+c] = 'B'; break;
-          }
-          
-          case 5:
-          if(x > x2){
-            for(int c = 0; c < 5; c++) p->tablero [i-c][j] = 'C'; break;
-          }
-          if(x < x2){
-            for(int c = 0; c < 5; c++) p->tablero [i+c][j] = 'C'; break;
-          }
-          if(y > y2){
-            for(int c = 0; c < 5; c++) p->tablero [i][j-c] = 'C'; break;
-          }
-          if(y <y2){
-            for(int c = 0; c < 5; c++) p->tablero [i][j+c] = 'C'; break;
-          }
-        }
-        
-      }
-    }
-  }
-  printf("\n");
-  printf("   0  1  2  3  4  5  6  7  8  9\n");
-  for(int i = 0; i < 10; i++)
-  {
-    printf("%i ", i);
-
-    for(j = 0; j < 10; j++)
-      printf("[%c]", p->tablero[i][j]);
-
-    printf("\n");
-  }
   printf("\n");
 }
+
 
 void barcosMAQUINA(Map* tableros){
   terreno* p = searchMap(tableros, "enemy");
@@ -525,4 +759,17 @@ void attack_tablero(terreno* matriz){
     printf("\n");
   }
   
+}
+
+void menu()
+{
+  printf(" ______________________________________\n");
+  printf("|         Bienvenido al Menu de        |\n");
+  printf("|              BATTLESHIP              |\n");
+  printf("|______________________________________|\n");
+  printf("| 1) Jugar Partida                     |\n");   
+  printf("| 2) Mostrar Los Puntajes              |\n");   
+  printf("| 3) Salir De La Aplicacion            |\n"); 
+  printf("|______________________________________|\n\n");
+  printf("¿Que deseas hacer hoy?\n\nOPCION = ");
 }
