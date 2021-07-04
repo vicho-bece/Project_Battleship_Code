@@ -47,20 +47,20 @@ int is_equal_int(void * key1, void * key2) {
     return 0;
 }
 
-int lower_than_int(void * key1, void * key2) {
-    if(*(int*)key1 < *(int*)key2) return 1;
+int more_than_int(void * key1, void * key2) {
+    if(*(int*)key1 > *(int*)key2) return 1;
     return 0;
 }
 
 void menu();
 
 //OPCIONES DEL MENU
-void jugarPARTIDA(Map*, Map*, List*);
+void jugarPARTIDA(Map*, Map*, Map*, List*);
 void mostrarPUNTAJES(Map*);
 
 //OPCIONES DE JUGAR PARTIDA
-void nuevaPARTIDA(Map*, Map*, List*);
-void cargarPARTIDA(Map*, Map*, List*, FILE);
+void nuevaPARTIDA(Map*, Map*, Map*, List*);
+void cargarPARTIDA(Map*, Map*, List*);
 
 //OPCIONES DE MOSTRAR PUNTAJES
 void cargarPUNTAJES(Map*);
@@ -77,10 +77,12 @@ bool barcosLibres(int, int, terreno*, int, int, int);
 bool medida(int, int, int, int, int);
 
 //FUNCIONES APARTES DURANTE LA PARTIDA
-void partida(Map*, Map*, List*);
+void partida(Map*, Map*, Map*, List*);
 bool finish(terreno*);
 void attack(terreno*, terreno*, turnos*, coordenadas*, int, int);
 void attack_tablero(terreno*);
+void guardarPARTIDA(Map*, Map*, List*);
+void nuevoRECORD(Map*, Map*);
 
 //FUNCIONES APARTES DE CARGAR, GUARDAR Y BORRAR PUNTAJE
 void show(Map*);
@@ -94,6 +96,7 @@ int main()
   Map* scores = createMap(is_equal_int);
   Map* grafo = createMap(is_equal_string);
   List* ataques = create_list();
+  setSortFunction(scores, more_than_int);
   
   int num;
   menu();
@@ -103,26 +106,25 @@ int main()
   {
     switch(num)
     {
-      case 1: jugarPARTIDA(tableros, grafo, ataques); break;
+      case 1: jugarPARTIDA(tableros, scores, grafo, ataques); break;
       case 2: mostrarPUNTAJES(scores); break;
-      default: printf("\nLa opcion que escogio no es valido. Favor de ingresar uno dentro del rango\n\nOPCION = "); break;
+      default: printf("\nLa opcion escogida no es valida. Favor de ingresar una dentro del rango\n\nOPCION = "); break;
     }
     system("clear");
     menu();
     scanf("%i", &num);
   }
 
-  printf("Usted dio finalizado la aplicacion. Muchas gracias por jugar y hasta luego...");
+  printf("Usted ha finalizado la aplicacion. Muchas gracias por jugar y hasta luego...");
   
   return 0;
 }
 
 //OPCIONES DE JUGAR PARTIDA...
-void jugarPARTIDA(Map* tableros, Map* grafo, List* ataques)
+void jugarPARTIDA(Map* tableros, Map* scores, Map* grafo, List* ataques)
 {
   system("clear");
 
-  FILE* archivo;
   int num;
 
   printf(" ______________________________________\n");
@@ -130,22 +132,82 @@ void jugarPARTIDA(Map* tableros, Map* grafo, List* ataques)
   printf("| 2) Cargar Partida                    |\n"); 
   printf("| 3) Volver Al Menu Principal          |\n");
   printf("|______________________________________|\n\n");
-  printf("¿Que deseas hacer?\n\nOPCION = ");
+  printf("¿Que desea hacer, comandante?\n\nOPCION = ");
   scanf("%i", &num);
   
   while(num != 3)
   {
-    if(num == 1)
+    FILE* archivo = fopen("progreso.txt", "r");
+    if(archivo == NULL)
     {
-      //AQUI REVISAR SI HAY PROGRESO...
-      nuevaPARTIDA(tableros, grafo, ataques); break;
+      printf("Error al abrir el archivo, se forzara el cierre del juego...");
+      exit(EXIT_FAILURE);
+    }
+    //fseek(archivo, 0, SEEK_END);
+    
+    switch(num)
+    {
+      case 1:
+        if(ftell(archivo) != 0)
+        {
+          printf("Al parecer dejaste una partida sin finalizar.\n¿Desea borrar el progreso igualmente?\n\n1 = SI (Lo llevara de inmediato a la nueva partida)\n2 = NO (Seguira en este menu)\n\nOPCION = ");
+
+          scanf("%i", &num);
+          while(num != 1 && num != 2)
+          {
+            printf("\nOpcion no valido.\n\nOPCION = ");
+            scanf("%i", &num);
+          }
+
+          if(num == 1)
+          {
+            fseek(archivo, 0, SEEK_SET);
+            fputc('\0', archivo);
+            fclose(archivo);
+
+            nuevaPARTIDA(tableros, scores, grafo, ataques);
+            break;
+          }
+          else
+          {
+            fclose(archivo);
+            break;
+          }
+        }
+        else
+        {
+          fclose(archivo);
+          nuevaPARTIDA(tableros, scores, grafo, ataques); 
+          break;
+        }
+
+      case 2:
+        if(ftell(archivo) != 0)
+        {
+          fclose(archivo);
+          cargarPARTIDA(tableros, grafo, ataques);
+          partida(tableros, scores, grafo, ataques); 
+          break;
+        }
+        else
+        {
+          printf("\nNo hay una partida guardada anteriormente...\n\n");
+          fclose(archivo);
+          break;
+        }
+
+      default:
+        printf("\nOpcion no valido...\n\n");
+        break;
     }
 
-    /*if(num == 2)
-    {
-      //AQUI REVISAR SI HAY PROGRESO...
-      cargarPARTIDA(tableros, grafo, ataques, *archivo); break;
-    }*/
+    printf(" ______________________________________\n");
+    printf("| 1) Nueva Partida                     |\n");   
+    printf("| 2) Cargar Partida                    |\n"); 
+    printf("| 3) Volver Al Menu Principal          |\n");
+    printf("|______________________________________|\n\n");
+    printf("¿Que desea hacer, comandante?\n\nOPCION = ");
+    scanf("%i", &num);
   }
 }
 
@@ -154,6 +216,7 @@ void mostrarPUNTAJES(Map* score)
 {
   puntajes* datos = firstMap(score);
   system("clear");
+  
   if(datos != NULL)
   {
     printf("Estos son los puntajes que sean obtenido despues de ganar una partida...\n");
@@ -191,7 +254,7 @@ void mostrarPUNTAJES(Map* score)
     printf("| 3) Borrar Puntajes Guardados         |\n");
     printf("| 4) Volver Al Menu Principal          |\n");
     printf("|______________________________________|\n\n");
-    printf("¿Que deseas hacer?\n\nOPCION = ");
+    printf("¿Que desea hacer, comandante?\n\nOPCION = ");
 
     scanf("%i", &num);
   }
@@ -317,7 +380,6 @@ void guardarPUNTAJES(Map* score)
       fputc('\n', points);
       datos = nextMap(score);
     }
-    fputc('\0', points);
   }
   else
     printf("\nNo hay puntajes guardados, debido a que no has ganado una partida todavia...\n\n");
@@ -335,7 +397,7 @@ void borrarPuntajes()
   }
   system("clear");
   fseek(points, 0, SEEK_END);
-  
+
   if(ftell(points) != 0)
   {
     fseek(points, 0, SEEK_SET);
@@ -350,7 +412,7 @@ void borrarPuntajes()
   fclose(points);
 }
 
-void nuevaPARTIDA(Map* tableros, Map* grafo, List* ataques)
+void nuevaPARTIDA(Map* tableros, Map* scores, Map* grafo, List* ataques)
 {
   system("clear");
 
@@ -404,7 +466,7 @@ void nuevaPARTIDA(Map* tableros, Map* grafo, List* ataques)
     push_back(ataques, xy);
   }
   
-  partida(tableros, grafo, ataques);
+  partida(tableros, scores, grafo, ataques);
 }
 
 void crearMATRIZ(terreno* matriz)
@@ -419,9 +481,8 @@ void crearMATRIZ(terreno* matriz)
 
 void barcos(Map* tableros)
 {
-
   terreno *p = searchMap(tableros, "user");
-  int cdx, cdy, i, j, k = 3,cdx2, cdy2;
+  int cdx, cdy, i, j, k = 3, cdx2, cdy2;
   
   printf("Este es tu tablero Usuario(a)...\n\n");
   printf("   0  1  2  3  4  5  6  7  8  9\n");
@@ -469,6 +530,7 @@ void barcos(Map* tableros)
     
     k++;
   }
+  system("clear");
 }
 
 bool medida(int x, int y, int x2, int y2, int k)
@@ -666,7 +728,6 @@ void barcosMAQUINA(Map* tableros){
 
   }
   
-
   //printf("\n");
 }
 
@@ -681,11 +742,92 @@ bool vertical(int x, int y, terreno* p)
   return true;
 }
 
+void cargarPARTIDA(Map* tableros, Map* grafo, List* ataques)
+{
+  system("clear");
+  FILE* archivo = fopen("progreso.txt", "r");
+  char name[12];
+  char linea[114];
+  char num[3];
+  terreno* data;
+  turnos* player;
+  int i, k, j, cont = 1, barcos;
 
-void partida(Map* tableros,Map* grafo, List* ataques){
+  while( fscanf(archivo, "%113[^\n]s", linea) != EOF)
+  {
+    fgetc(archivo);
+    i = 0;
 
-  int x, y;
+    if(cont <= 4)
+    {
+      data = malloc(sizeof(terreno));
+      
+      for(k = 0; k < 10; k++)
+        for(j = 0; j < 10; j++, i++)
+          data->tablero[k][j] = linea[i];
 
+      i++;
+
+      for(k = 0; linea[i] != '\0';i++,k++)
+        name[k] = linea[i];
+      name[k] = '\0';
+
+      data->nombre = strdup(name);
+      insertMap(tableros, data->nombre, data);
+      cont++;
+    }
+    else
+    {
+      player = malloc(sizeof(turnos));
+
+      for(barcos = 1; barcos < 4;barcos++)
+      {
+        if(barcos == 1)
+        {
+          num[i] = linea[i];
+          num[i + 1] = '\0';
+          player->a = conversion(num);
+          i+=2;
+        }
+
+        if(barcos == 2)
+        {
+          num[i] = linea[i];
+          num[i + 1] = '\0';
+          player->b = conversion(num);
+          i+=2;
+        }
+
+        if(barcos == 3)
+        {
+          num[i] = linea[i];
+          num[i + 1] = '\0';
+          player->c = conversion(num);
+          i+=2;
+        }
+      }
+
+      for(k = 0; linea[i] != ','; i++, k++)
+        num[k] = linea[i];
+      num[k] = '\0';
+      player->fallos = conversion(num);
+
+      i++;
+      
+      for(k = 0; linea[i] != '\0'; i++, k++)
+        name[k] = linea[i];
+      name[k] = '\0';
+      player->nombre = strdup(name);
+      
+      insertMap(grafo, player->nombre, player);
+    }
+  }
+  fclose(archivo);
+}
+
+void partida(Map* tableros, Map* scores,Map* grafo, List* ataques)
+{
+  int x, opcion, y, i;
   terreno* user = searchMap(tableros, "user");
   terreno* enemy = searchMap(tableros, "enemy");
   terreno* userATTACK = searchMap(tableros, "userATTACK");
@@ -695,10 +837,38 @@ void partida(Map* tableros,Map* grafo, List* ataques){
   coordenadas* usuario = first(ataques);
   coordenadas* enemigo = first(ataques); enemigo = next(ataques);
 
+  printf("Este es tu tablero de ataque...\n");
+  attack_tablero(userATTACK);
+  printf("\n\nEste es tu tablero de tus barcos...\n");
+  attack_tablero(user);
 
   while(finish(user) && finish(enemy))
-  { 
-	  
+  {
+    printf(" ______________________________________\n");
+    printf("| 1) Atacar Al Oponente                |\n");   
+    printf("| 2) Guardar Y Salir De La Partida     |\n"); 
+    printf("| 3) Salir De La Partida Sin Guardar   |\n");
+    printf("|______________________________________|\n\n");
+	  printf("¿Que desea hacer, Capitan?\n\nOPCION = ");
+
+    scanf("%i", &opcion);
+    while(opcion < 1 || opcion > 3)
+    {
+      printf("Opcion no valido.\n\nOPCION = ");
+      scanf("%i", &opcion);
+    }
+
+    if(opcion == 2)
+    {
+      guardarPARTIDA(tableros, grafo, ataques);
+      break;
+    }
+    if(opcion == 3)
+    {
+      system("clear");
+      break;
+    }
+
     printf("ingrese coordenada X a la cual atacar\nX = ");
     scanf("%d", &y);
     printf("ingrese coordenada Y a la cual atacar\nY = ");
@@ -718,9 +888,10 @@ void partida(Map* tableros,Map* grafo, List* ataques){
     attack(userATTACK, enemy, player, usuario, x, y);
     printf("\nEste es tu tablero de ataque...\n\n");
     attack_tablero(userATTACK);
-
-    x = rand() % 10;
-    y = rand() % 10;
+    
+    
+      x = rand() % 10;
+      y = rand() % 10;
 
     while(enemyATTACK->tablero[x][y] != ' ')
     {
@@ -729,12 +900,182 @@ void partida(Map* tableros,Map* grafo, List* ataques){
     }
 
     attack(enemyATTACK, user, pc, enemigo, x, y);
-    
     printf("\n");
     attack_tablero(user);
   }
+  system("clear");
+  if(finish(enemy) == false)
+  {
+    printf("WINNER, HA GANADO LA PARTIDA.\nA CONTINUACION LOS RESULTADOS Y PUNTAJES...\n\n");
+    nuevoRECORD(grafo, scores);
+  }
+  if(finish(user) == false)
+    printf("GAME OVER\nFUE VENCIDO POR EL ENEMIGO, MEJOR SUERTE PARA LA PROXIMA...\n\n");
 
-  printf("\nFIN EL JUEGO\n");
+  for(i = 0; i < 6; i++)
+  {
+    if(i == 0) eraseMap(tableros, "user");
+    if(i == 1) eraseMap(tableros, "enemy");
+    if(i == 2) eraseMap(tableros, "userATTACK");
+    if(i == 3) eraseMap(tableros, "enemyATTACK");
+    if(i == 4) eraseMap(grafo, "user");
+    if(i == 5) eraseMap(grafo, "enemy");
+  }
+}
+
+void nuevoRECORD(Map* grafo, Map* scores)
+{
+  puntajes* nuevo = malloc(sizeof(puntajes));
+  turnos* dataENEMY = searchMap(grafo, "enemy");
+  turnos* dataUSER = searchMap(grafo, "user");
+  
+  char nombre[21];
+  int puntos = 1000, vidas = 15, cada5;
+
+  printf("Puntos base por ganar = %i\n", puntos);
+  vidas-= (dataENEMY->a + dataENEMY->b + dataENEMY->c);
+
+  if(vidas == 0)
+  {
+    printf("Bonus por no perder vidas = 2000\n");
+    puntos += 2000;
+  }
+  else
+  {
+    puntos += (300 * (16 - vidas));
+    printf("Bonus por haber sobrevivido con %i = %i\n",vidas, (puntos-1000));
+  }
+
+  if(dataUSER->fallos == 0)
+  {
+    printf("Bonus por no fallar un ataque = 3000\n");
+    puntos += 3000;
+  }
+  
+  if(dataUSER->fallos >= 5)
+  {
+    cada5 = dataUSER->fallos / 5;
+    printf("Descuento por fallar cada 5 veces = %i\n\n", cada5*25);
+    puntos -= (25 * cada5);
+  }
+
+  printf("PUNTAJE FINAL = %i", puntos);
+  printf("\n\n¿Cual es tu nombre, Capitan? Maximo 20 letras/caracteres\n\n NOMBRE = ");
+
+  getchar();
+  scanf("%20[^\n]s", nombre);
+
+  nuevo->puntuacion = puntos;
+  nuevo->comandante = strdup(nombre);
+  insertMap(scores, &nuevo->puntuacion, nuevo);
+}
+
+void guardarPARTIDA(Map* tableros, Map* grafo, List* ataques)
+{
+  FILE* archivo = fopen("progreso.txt", "w");
+  if(archivo == NULL)
+  {
+    printf("Error al abrir el archivo. Se forzara el cierre del juego...");
+    exit(EXIT_FAILURE);
+  }
+
+  terreno* data = firstMap(tableros);
+  turnos* player = firstMap(grafo);
+  int i, j, cont = 1;
+
+  while(cont <= 4)
+  {
+    for(i = 0; i < 10; i++)
+      for(j = 0; j < 10; j++)
+        fputc(data->tablero[i][j], archivo);
+
+    fputc(' ', archivo);
+    fputs(data->nombre, archivo);
+    fputc('\n', archivo);
+
+    cont++;
+    data = nextMap(tableros);
+  }
+  system("clear");
+  
+  for(i = 0; i < 2; i++)
+  {
+    fprintf(archivo, "%i", player->a);
+    fputc(',', archivo);
+
+    fprintf(archivo, "%i", player->b);
+    fputc(',', archivo);
+
+    fprintf(archivo, "%i", player->c);
+    fputc(',', archivo);
+
+    fprintf(archivo, "%i", player->fallos);
+    fputc(',', archivo);
+
+    fputs(player->nombre, archivo);
+    player = nextMap(grafo);
+    fputc('\n', archivo);
+  }
+
+  fclose(archivo);
+  clear(ataques);
+  for(i = 0; i < 6; i++)
+  {
+    if(i == 0) eraseMap(tableros, "user");
+    if(i == 1) eraseMap(tableros, "enemy");
+    if(i == 2) eraseMap(tableros, "userATTACK");
+    if(i == 3) eraseMap(tableros, "enemyATTACK");
+    if(i == 4) eraseMap(grafo, "user");
+    if(i == 5) eraseMap(grafo, "enemy");
+  }
+}
+
+void attack(terreno* attack, terreno* oponente, turnos* grafo, coordenadas* registro, int x, int y)
+{
+  printf("\n");
+
+  if(strcmp(attack->nombre, "enemyATTACK") == 0)
+    printf("(EL OPONENTE) ");
+
+  if(oponente->tablero[x][y] == ' '){
+    grafo->fallos++;
+    printf("HAS FALLADO!:(\n");
+    attack->tablero[x][y] = 'O';
+    oponente->tablero[x][y] = '!';
+  }
+  
+  if(oponente->tablero[x][y] == 'A')
+  {
+    grafo->a++;
+    attack->tablero[x][y] = 'X';
+    oponente->tablero[x][y] = 'X';
+    printf("LE HAS DADO A UN BARCO!\n");
+    
+    if(grafo->a == 3)
+      printf("\nEL BARCO A HA SIDO HUNDIDO!\n");
+  }
+  
+  if(oponente->tablero[x][y] == 'B')
+  {
+    grafo->b++;
+    attack->tablero[x][y] = 'X';
+    oponente->tablero[x][y] = 'X';
+    printf("LE HAS DADO A UN BARCO!\n");
+
+    if(grafo->b == 4)
+      printf("\nEL BARCO B HA SIDO HUNDIDO!\n");
+  }
+  
+  if(oponente->tablero[x][y] == 'C')
+  {
+    grafo->c++;
+    attack->tablero[x][y] = 'X';
+    oponente->tablero[x][y] = 'X';
+    printf("LE HAS DADO A UN BARCO!\n");
+
+    if(grafo->c == 5)
+      printf("\nEL BARCO C HA SIDO HUNDIDO!\n");
+  }
 }
 
 bool finish(terreno* matriz)
@@ -752,56 +1093,9 @@ bool finish(terreno* matriz)
   return true;
 }
 
-void attack(terreno* attack, terreno* oponente, turnos* grafo, coordenadas* registro, int x, int y)
-{
-  //coordenadas* turno = malloc(sizeof(coordenadas));
-
-  if(oponente->tablero[x][y] == ' '){
-    grafo->fallos++;
-    printf("\nHAS FALLADO!:(\n");
-    attack->tablero[x][y] = 'O';
-    oponente->tablero[x][y] = '!';
-  }
-  
-  if(oponente->tablero[x][y] == 'A')
-  {
-    grafo->a++;
-    attack->tablero[x][y] = 'X';
-    oponente->tablero[x][y] = 'X';
-    printf("\nLE HAS DADO A UN BARCO!\n");
-    if(grafo->a == 3){
-      printf("\nEL BARCO A HA SIDO HUNDIDO!\n");
-
-    }
-  }
-  
-  if(oponente->tablero[x][y] == 'B')
-  {
-    grafo->b++;
-    attack->tablero[x][y] = 'X';
-    oponente->tablero[x][y] = 'X';
-    printf("\nLE HAS DADO A UN BARCO!\n");
-    if(grafo->b == 4){
-      printf("\nEL BARCO B HA SIDO HUNDIDO!\n");
-    }
-  }
-  
-  if(oponente->tablero[x][y] == 'C')
-  {
-    grafo->c++;
-    attack->tablero[x][y] = 'X';
-    oponente->tablero[x][y] = 'X';
-    printf("\nLE HAS DADO A UN BARCO!\n");
-    if(grafo->c == 5){
-      printf("\nEL BARCO C HA SIDO HUNDIDO!\n");
-    }
-  }
-}
-
 void attack_tablero(terreno* matriz){
   int i, j;
 
-  
   printf("   0  1  2  3  4  5  6  7  8  9\n");
   for(i = 0; i < 10; i++)
   {
@@ -812,7 +1106,6 @@ void attack_tablero(terreno* matriz){
 
     printf("\n");
   }
-  
 }
 
 void menu()
