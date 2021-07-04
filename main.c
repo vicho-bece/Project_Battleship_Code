@@ -18,7 +18,7 @@ typedef struct{
   char* comandante;
 }puntajes;
 
-//Estructura para el mapa del grafo
+//Estructura para el registro de ataques...
 typedef struct{
   int a;
   int b;
@@ -61,11 +61,13 @@ void mostrarPUNTAJES(Map*);
 //OPCIONES DE JUGAR PARTIDA
 void nuevaPARTIDA(Map*, Map*, Map*, List*);
 void cargarPARTIDA(Map*, Map*, List*);
+void menu1();
 
 //OPCIONES DE MOSTRAR PUNTAJES
 void cargarPUNTAJES(Map*);
 void guardarPUNTAJES(Map*);
 void borrarPuntajes();
+void menu2();
 
 //FUNCIONES APARTES DE NUEVA PARTIDA
 void agregarBARCOS(int, int, terreno*, int, int, int);
@@ -83,6 +85,7 @@ void attack(terreno*, terreno*, turnos*, coordenadas*, int, int);
 void attack_tablero(terreno*);
 void guardarPARTIDA(Map*, Map*, List*);
 void nuevoRECORD(Map*, Map*);
+void menu3();
 
 //FUNCIONES APARTES DE CARGAR, GUARDAR Y BORRAR PUNTAJE
 void show(Map*);
@@ -115,7 +118,7 @@ int main()
     scanf("%i", &num);
   }
 
-  printf("Usted ha finalizado la aplicacion. Muchas gracias por jugar y hasta luego...");
+  printf("\nUsted ha finalizado la aplicacion. Muchas gracias por jugar y hasta luego...");
   
   return 0;
 }
@@ -127,12 +130,7 @@ void jugarPARTIDA(Map* tableros, Map* scores, Map* grafo, List* ataques)
 
   int num;
 
-  printf(" ______________________________________\n");
-  printf("| 1) Nueva Partida                     |\n");   
-  printf("| 2) Cargar Partida                    |\n"); 
-  printf("| 3) Volver Al Menu Principal          |\n");
-  printf("|______________________________________|\n\n");
-  printf("¿Que desea hacer, comandante?\n\nOPCION = ");
+  menu1();
   scanf("%i", &num);
   
   while(num != 3)
@@ -143,7 +141,7 @@ void jugarPARTIDA(Map* tableros, Map* scores, Map* grafo, List* ataques)
       printf("Error al abrir el archivo, se forzara el cierre del juego...");
       exit(EXIT_FAILURE);
     }
-    //fseek(archivo, 0, SEEK_END);
+    fseek(archivo, 0, SEEK_END);
     
     switch(num)
     {
@@ -161,8 +159,10 @@ void jugarPARTIDA(Map* tableros, Map* scores, Map* grafo, List* ataques)
 
           if(num == 1)
           {
+            fclose(archivo);
+            archivo = fopen("progreso.txt", "w");
             fseek(archivo, 0, SEEK_SET);
-            fputc('\0', archivo);
+
             fclose(archivo);
 
             nuevaPARTIDA(tableros, scores, grafo, ataques);
@@ -201,12 +201,7 @@ void jugarPARTIDA(Map* tableros, Map* scores, Map* grafo, List* ataques)
         break;
     }
 
-    printf(" ______________________________________\n");
-    printf("| 1) Nueva Partida                     |\n");   
-    printf("| 2) Cargar Partida                    |\n"); 
-    printf("| 3) Volver Al Menu Principal          |\n");
-    printf("|______________________________________|\n\n");
-    printf("¿Que desea hacer, comandante?\n\nOPCION = ");
+    menu1();
     scanf("%i", &num);
   }
 }
@@ -226,13 +221,7 @@ void mostrarPUNTAJES(Map* score)
   else
     printf("\nNo hay datos de los puntajes. Si has guardados los puntajes anteriormente, ingrese la opcion de cargar los puntajes guardados...\n\n");
 
-  printf("\n ______________________________________\n");
-  printf("| 1) Cargar Puntajes Guardados         |\n");   
-  printf("| 2) Guardar Puntajes Nuevos           |\n"); 
-  printf("| 3) Borrar Puntajes Guardados         |\n");
-  printf("| 4) Volver Al Menu Principal          |\n");
-  printf("|______________________________________|\n\n");
-  printf("¿Que deseas hacer?\n\nOPCION = ");
+  menu2();
 
   int num;
   scanf("%i", &num);
@@ -248,13 +237,7 @@ void mostrarPUNTAJES(Map* score)
     }
     
     show(score);
-    printf("\n ______________________________________\n");
-    printf("| 1) Cargar Puntajes Guardados         |\n");   
-    printf("| 2) Guardar Puntajes Nuevos           |\n"); 
-    printf("| 3) Borrar Puntajes Guardados         |\n");
-    printf("| 4) Volver Al Menu Principal          |\n");
-    printf("|______________________________________|\n\n");
-    printf("¿Que desea hacer, comandante?\n\nOPCION = ");
+    menu2();
 
     scanf("%i", &num);
   }
@@ -389,7 +372,7 @@ void guardarPUNTAJES(Map* score)
 
 void borrarPuntajes()
 {
-  FILE* points = fopen("score.txt", "w");
+  FILE* points = fopen("score.txt", "r");
   if(points == NULL)
   {
     printf("Error al abrir el archivo, se forzara el cierre del juego...");
@@ -400,8 +383,10 @@ void borrarPuntajes()
 
   if(ftell(points) != 0)
   {
+    fclose(points);
+    points = fopen("score.txt", "w");
     fseek(points, 0, SEEK_SET);
-    fputc('\0', points);
+    
     printf("\nSe borro el contenido de los puntajes en el archivo de forma exitosa...\n\n");
   }
   else
@@ -844,12 +829,7 @@ void partida(Map* tableros, Map* scores,Map* grafo, List* ataques)
 
   while(finish(user) && finish(enemy))
   {
-    printf(" ______________________________________\n");
-    printf("| 1) Atacar Al Oponente                |\n");   
-    printf("| 2) Guardar Y Salir De La Partida     |\n"); 
-    printf("| 3) Salir De La Partida Sin Guardar   |\n");
-    printf("|______________________________________|\n\n");
-	  printf("¿Que desea hacer, Capitan?\n\nOPCION = ");
+    menu3();
 
     scanf("%i", &opcion);
     while(opcion < 1 || opcion > 3)
@@ -921,6 +901,10 @@ void partida(Map* tableros, Map* scores,Map* grafo, List* ataques)
     if(i == 4) eraseMap(grafo, "user");
     if(i == 5) eraseMap(grafo, "enemy");
   }
+
+  FILE* progress = fopen("progreso.txt", "w");
+  fseek(progress, 0, SEEK_SET);
+  fclose(progress);
 }
 
 void nuevoRECORD(Map* grafo, Map* scores)
@@ -1093,7 +1077,8 @@ bool finish(terreno* matriz)
   return true;
 }
 
-void attack_tablero(terreno* matriz){
+void attack_tablero(terreno* matriz)
+{
   int i, j;
 
   printf("   0  1  2  3  4  5  6  7  8  9\n");
@@ -1119,4 +1104,35 @@ void menu()
   printf("| 3) Salir De La Aplicacion            |\n"); 
   printf("|______________________________________|\n\n");
   printf("¿Que deseas hacer hoy?\n\nOPCION = ");
+}
+
+void menu1()
+{
+  printf(" ______________________________________\n");
+  printf("| 1) Nueva Partida                     |\n");   
+  printf("| 2) Cargar Partida                    |\n"); 
+  printf("| 3) Volver Al Menu Principal          |\n");
+  printf("|______________________________________|\n\n");
+  printf("¿Que desea hacer?\n\nOPCION = ");
+}
+
+void menu2()
+{
+  printf("\n ______________________________________\n");
+  printf("| 1) Cargar Puntajes Guardados         |\n");   
+  printf("| 2) Guardar Puntajes Nuevos           |\n"); 
+  printf("| 3) Borrar Puntajes Guardados         |\n");
+  printf("| 4) Volver Al Menu Principal          |\n");
+  printf("|______________________________________|\n\n");
+  printf("¿Que deseas hacer?\n\nOPCION = ");
+}
+
+void menu3()
+{
+  printf(" ______________________________________\n");
+  printf("| 1) Atacar Al Oponente                |\n");   
+  printf("| 2) Guardar Y Salir De La Partida     |\n"); 
+  printf("| 3) Salir De La Partida Sin Guardar   |\n");
+  printf("|______________________________________|\n\n");
+  printf("¿Que desea hacer, Capitan?\n\nOPCION = ");
 }
