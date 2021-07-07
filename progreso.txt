@@ -1,6 +1,6 @@
-                                   OO      O                               O                         enemyATTACK
-                                            OX         X                    O                        userATTACK
-     AAA   CCCCC                            !X         X         B         B!                        enemy
-AAA      C         C         C     !!  C   !     C                         !                    BBBB user
-0,0,0,4,enemy
-0,2,0,2,user
+             O                                  O                                                    enemyATTACK
+O                                                                            O                       userATTACK
+!                                           AAA        CCCCC        B        !B         B         B  enemy
+AAA          !                                  !          C         C         C         CBBBB     C user
+0,0,0,2,enemy
+0,0,0,2,user

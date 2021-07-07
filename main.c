@@ -267,7 +267,7 @@ void mostrarPUNTAJES(Map* score)
   
   while(isdigit(num[0]) == 0)
   {
-    printf("\nOpción no válida, elija otra5:\n");
+    printf("\nOpción no válida, elija otra:\n");
     scanf("%1s", num);
   }
 
@@ -287,7 +287,7 @@ void mostrarPUNTAJES(Map* score)
     
     while(isdigit(num[0]) == 0)
     {
-      printf("\nOpción no válida, elija otra6:\n");
+      printf("\nOpción no válida, elija otra:\n");
       scanf("%1s", num);
     }
   }
@@ -908,7 +908,7 @@ void partida(Map* tableros, Map* scores,Map* registro)
     
     while(isdigit(opcion[0]) == 0)
     {
-      printf("\nOpción no válida, elija otra7:\n");
+      printf("\nOpción no válida, elija otra:\n");
       scanf("%1s", opcion);
     }
 
@@ -1020,9 +1020,11 @@ void nuevoRECORD(Map* registro, Map* scores)
   char nombre[21];
   int puntos = 1000, vidas = 15, cada4;
 
+  //Se otorga los puntos base por ganar la partida...
   printf("Puntos base por ganar = %i\n", puntos);
   vidas-= (dataENEMY->a + dataENEMY->b + dataENEMY->c);
 
+  //Se otorga una bonificacion ya sea por no perder vidas o haber sobrevivido con algunas...
   if(vidas == 15)
   {
     printf("Bonus por no perder vidas = 2000\n");
@@ -1034,12 +1036,14 @@ void nuevoRECORD(Map* registro, Map* scores)
     printf("Bonus por haber sobrevivido con %i = %i\n",vidas, (puntos-1000));
   }
 
+  //Bonificacion en caso de no fallar un ataque
   if(dataUSER->fallos == 0)
   {
     printf("Bonus por no fallar un ataque = 3000\n");
     puntos += 3000;
   }
   
+  //Descuento por fallar cada 4 veces
   if(dataUSER->fallos >= 4)
   {
     cada4 = dataUSER->fallos / 4;
@@ -1047,6 +1051,7 @@ void nuevoRECORD(Map* registro, Map* scores)
     puntos -= (25 * cada4);
   }
 
+  //Imprime el puntaje y debe ingresar su nombre/nickname...
   printf("PUNTAJE FINAL = %i", puntos);
   printf("\n\n¿Cual es tu nombre, Comandante? (Maximo 20 letras/caracteres)\n\n NOMBRE = ");
 
